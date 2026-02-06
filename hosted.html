@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Speed Test - Test Your Connection</title>
+      <link rel="icon" type="image/png" sizes="32x32" href="assets/images/icons/favicon-32x32.png">
+      <link href="assets/css/resultsUI.css" rel="stylesheet" type="text/css" />
+      <style>
+         * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+         }
+         ::-webkit-scrollbar {
+            display: none;
+         }
+         html {
+            -ms-overflow-style: none; 
+            scrollbar-width: none;
+         }
+         body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0a;
+         }
+         .nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 18px 30px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+         }
+         .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            position: relative;
+            overflow: hidden;
+         }
+         
+         .back-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+         }
+         
+         .back-button:hover::before {
+            left: 100%;
+         }
+         
+         .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+         }
+         .nav-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e5e7eb;
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+         }
+         .manual-input-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #c084fc 100%);
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            margin-left: auto;
+         }
+         .manual-input-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+         }
+         .try-again-btn {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+         }
+         .try-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+         }
+         .try-again-btn.visible {
+            display: inline-flex;
+         }
+         #speedtest-container {
+            margin-top: 60px;
+            width: 100%;
+            height: calc(100vh - 60px);
+         }
+         #speedtest-container.hidden {
+            display: none;
+         }
+         #OST-iFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+         }
+         @media (max-width: 768px) {
+            .nav-header {
+               padding: 12px 20px;
+            }
+            .nav-title {
+               font-size: 16px;
+            }
+            .manual-input-btn {
+               padding: 10px 16px;
+               font-size: 13px;
+            }
+            .try-again-btn {
+               padding: 10px 16px;
+               font-size: 13px;
+            }
+         }
+         
+         /* Manual Input Modal */
+         .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 20000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+         }
+         
+         .modal-overlay.active {
+            display: flex;
+         }
+         
+         @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+         }
+         
+         .modal-content {
+            background: rgba(15, 15, 15, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+         }
+         
+         @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+         }
+         
+         .modal-header {
+            margin-bottom: 24px;
+         }
+         
+         .modal-header h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 8px 0;
+         }
+         
+         .modal-header p {
+            color: #9ca3af;
+            font-size: 0.95rem;
+            margin: 0;
+         }
+         
+         .form-group {
+            margin-bottom: 20px;
+         }
+         
+         .form-group label {
+            display: block;
+            color: #e5e7eb;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+         }
+         
+         .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e5e7eb;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+         }
+         
+         .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+         }
+         
+         .form-group small {
+            display: block;
+            color: #9ca3af;
+            font-size: 0.85rem;
+            margin-top: 4px;
+         }
+         
+         .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+         }
+         
+         .modal-btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+         }
+         
+         .modal-btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+         }
+         
+         .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+         }
+         
+         .modal-btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+         }
+         
+         .modal-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+         }
+      </style>
+   </head>
+   <body>
+      <div class="nav-header">
+         <a href="index.html" class="back-button">
+            <span>←</span>
+            <span>Back to Home</span>
+         </a>
+         <span class="nav-title">Internet Speed Test</span>
+         <button id="tryAgainBtn" class="try-again-btn" onclick="tryAgain()">
+            <span>🔄</span>
+            <span>Try Again</span>
+         </button>
+         <button class="manual-input-btn" onclick="openManualInput()">
+            <span>📝</span>
+            <span>Manual Input</span>
+         </button>
+      </div>
+
+      <div id="speedtest-container">
+         <iframe id="OST-iFrame" src="index-speedofme.html" allowfullscreen></iframe>
+      </div>
+      
+      <!-- Manual Input Modal -->
+      <div id="manualInputModal" class="modal-overlay">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h2>Manual Speed Test Input</h2>
+               <p>Enter your speed test results from an external tool</p>
+            </div>
+            
+            <form id="manualInputForm">
+               <div class="form-group">
+                  <label for="downloadSpeed">Download Speed (Mbps) *</label>
+                  <input type="number" id="downloadSpeed" step="0.01" min="0" required placeholder="e.g., 100.50">
+                  <small>Your download speed in megabits per second</small>
+               </div>
+               
+               <div class="form-group">
+                  <label for="uploadSpeed">Upload Speed (Mbps)</label>
+                  <input type="number" id="uploadSpeed" step="0.01" min="0" placeholder="e.g., 20.00">
+                  <small>Optional - Leave blank if not tested</small>
+               </div>
+               
+               <div class="form-group">
+                  <label for="pingLatency">Ping / Latency (ms)</label>
+                  <input type="number" id="pingLatency" step="1" min="0" placeholder="e.g., 25">
+                  <small>Optional - Typical range: 10-100 ms</small>
+               </div>
+               
+               <div class="modal-actions">
+                  <button type="button" class="modal-btn modal-btn-secondary" onclick="closeManualInput()">Cancel</button>
+                  <button type="submit" class="modal-btn modal-btn-primary">Analyze Results</button>
+               </div>
+            </form>
+         </div>
+      </div>
+      
+      <script>
+         function openManualInput() {
+            document.getElementById('manualInputModal').classList.add('active');
+         }
+         
+         function closeManualInput() {
+            document.getElementById('manualInputModal').classList.remove('active');
+            document.getElementById('manualInputForm').reset();
+         }
+         
+         function tryAgain() {
+            // Show the speedtest container
+            document.getElementById('speedtest-container').classList.remove('hidden');
+            // Hide the try again button
+            document.getElementById('tryAgainBtn').classList.remove('visible');
+            // Get iframe window and call hideResults to reset the UI
+            const iframeWindow = document.getElementById('OST-iFrame').contentWindow;
+            if (iframeWindow.hideResults) {
+               iframeWindow.hideResults();
+            }
+            // Reload the iframe to reset the test
+            const iframe = document.getElementById('OST-iFrame');
+            iframe.src = iframe.src;
+         }
+         
+         function hideSpeedTestShowResults() {
+            // Hide the speedtest container
+            document.getElementById('speedtest-container').classList.add('hidden');
+            // Show the try again button
+            document.getElementById('tryAgainBtn').classList.add('visible');
+         }
+         
+         // Close modal when clicking outside
+         document.getElementById('manualInputModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+               closeManualInput();
+            }
+         });
+         
+         // Handle form submission
+         document.getElementById('manualInputForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const download = parseFloat(document.getElementById('downloadSpeed').value) || 0;
+            const upload = parseFloat(document.getElementById('uploadSpeed').value) || 0;
+            const ping = parseFloat(document.getElementById('pingLatency').value) || 30;
+            
+            // Create results object matching the expected format
+            const manualResults = {
+               download: download,
+               upload: upload,
+               ping: ping,
+               downloadData: 0,
+               uploadData: 0,
+               manualInput: true  // Flag to indicate this is manual input
+            };
+            
+            // Get iframe's window to access the interpretation functions
+            const iframeWindow = document.getElementById('OST-iFrame').contentWindow;
+            
+            // Check if the functions are available
+            if (iframeWindow.interpretSpeedTest && iframeWindow.renderResults) {
+               const interpretation = iframeWindow.interpretSpeedTest(manualResults);
+               interpretation.manualInput = true;  // Add flag to interpretation
+               iframeWindow.renderResults(interpretation);
+               
+               // Hide speed test and show try again button
+               hideSpeedTestShowResults();
+               
+               // Scroll the iframe to show results
+               iframeWindow.scrollTo({
+                  top: 0,
+                  behavior: 'smooth'
+               });
+            }
+            
+            closeManualInput();
+         });
+      </script>
+   </body>
+</html>
